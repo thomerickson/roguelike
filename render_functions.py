@@ -1,6 +1,8 @@
 # render_functions.py
 
 from enum import Enum
+from game_states import GameStates
+from menus import inventory_menu
 
 class RenderOrder(Enum):
     CORPSE = 1
@@ -29,8 +31,9 @@ def render_bar(panel, x, y, total_width, name, value, maximum, bar_color, back_c
     panel.draw_str(x_centered, y, text, fg=string_color, bg=None)
 
 def render_all(con, panel, entities, player, game_map, fov_recompute, root_console, message_log,
- screen_width, screen_height, bar_width, panel_height, panel_y, mouse_coordinates, colors):
+ screen_width, screen_height, bar_width, panel_height, panel_y, mouse_coordinates, colors, game_state):
     # draw all the tiles in the game map
+    root_console.clear()
     if fov_recompute:
         for x, y in game_map:
             wall = not game_map.transparent[x, y]
@@ -39,13 +42,13 @@ def render_all(con, panel, entities, player, game_map, fov_recompute, root_conso
                 if wall:
                     con.draw_char(x, y, None, fg=None, bg=colors.get('light_wall'))
                 else:
-                    con.draw_char(x, y, None, fg=None, bg=colors.get('light_ground'))
+                    con.draw_char(x, y, '.', fg=colors.get('light_ground_dot'), bg=colors.get('light_ground'))
                 game_map.explored[x][y] = True
             elif game_map.explored[x][y]:
                 if wall:
                     con.draw_char(x, y, None, fg=None, bg=colors.get('dark_wall'))
                 else:
-                    con.draw_char(x, y, None, fg=None, bg=colors.get('dark_ground'))
+                    con.draw_char(x, y, '.', fg=colors.get('black'), bg=colors.get('dark_ground'))
         
     # draw all entities in the list
     entities_in_render_order = sorted(entities, key=lambda x: x.render_order.value)
@@ -63,11 +66,19 @@ def render_all(con, panel, entities, player, game_map, fov_recompute, root_conso
 
     root_console.blit(con, 0, 0, screen_width, screen_height, 0, 0)
 
-    render_bar(panel, 1, 1, bar_width, 'HP', player.fighter.hp, player.fighter.max_hp, colors.get('light_red'), colors.get('darker_red'), colors.get('white'))
+    render_bar(panel, 1, 1, bar_width, 'HP', player.fighter.hp, player.fighter.max_hp, colors.get('light_red'), colors.get('darker_red'), colors.get('black'))
     
     panel.draw_str(1, 0, get_names_under_mouse(mouse_coordinates, entities, game_map))
     
     root_console.blit(panel, 0, panel_y, screen_width, panel_height, 0, 0)
+
+    # show inventory menu
+    if game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+        if game_state == GameStates.SHOW_INVENTORY:
+            inventory_title = 'Select item to use. ESC to cancel.\n'
+        else:
+            inventory_title = 'Select item to drop. ESC to cancel.\n'
+        inventory_menu(con, root_console, inventory_title, player.inventory, 50, screen_width, screen_height)
 
 def clear_all(con, entities):
     for entity in entities:

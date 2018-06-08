@@ -1,4 +1,17 @@
-def handle_keys(user_input):
+# input_handlers.py
+
+from game_states import GameStates
+
+def handle_keys(user_input, game_state):
+    if game_state == GameStates.PLAYERS_TURN:
+        return handle_player_keys(user_input)
+    elif game_state == GameStates.PLAYER_DEAD:
+        return handle_player_dead_keys(user_input)
+    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+        return handle_inventory_keys(user_input)
+    return {}
+
+def handle_player_keys(user_input):
     # Movement keys
     key_char = user_input.char
 
@@ -18,7 +31,47 @@ def handle_keys(user_input):
         return {'move': (-1, 1)}
     elif key_char == 'n':
         return {'move': (1, 1)}
+    elif key_char == 'g':
+        return {'pickup': True}
+    elif key_char == 'i':
+        return {'show_inventory': True}
+    elif key_char == 'd':
+        return {'drop_inventory': True}
 
+    if user_input.key == 'ENTER' and user_input.alt == True:
+        # Alt + Enter: toggle full screen
+        return {'fullscreen': True}
+    elif user_input.key == 'ESCAPE':
+        # Exit the game
+        return {'exit': True}
+
+    # No key pressed
+    return {}
+
+def handle_player_dead_keys(user_input):
+    key_char = user_input.char
+    if key_char == 'i':
+        return {'show_inventory': True}
+
+    if user_input.key == 'ENTER' and user_input.alt == True:
+        # Alt + Enter: toggle full screen
+        return {'fullscreen': True}
+    elif user_input.key == 'ESCAPE':
+        # Exit the game
+        return {'exit': True}
+
+    # No key pressed
+    return {}
+
+def handle_inventory_keys(user_input):
+    if not user_input.char:
+        return {}
+
+    index = ord(user_input.char) - ord('a')
+
+    if index >= 0:
+        return {'inventory_index': index}
+    
     if user_input.key == 'ENTER' and user_input.alt:
         # Alt + Enter: toggle full screen
         return {'fullscreen': True}

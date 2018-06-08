@@ -2,9 +2,11 @@
 from tdl.map import Map
 from random import randint
 from entity import Entity
+from item_functions import heal
 from render_functions import RenderOrder
 from components.fighter import Fighter
 from components.ai import BasicMonster
+from components.item import Item
 
 class GameMap(Map):
     def __init__(self, width, height):
@@ -44,9 +46,10 @@ def create_v_tunnel(game_map, y1, y2, x):
         game_map.walkable[x, y] = True
         game_map.transparent[x, y] = True
 
-def place_entities(room, entities, max_monsters_per_room, colors):
+def place_entities(room, entities, max_monsters_per_room, max_items_per_room, colors):
     # get random number of monsters
     number_of_monsters = randint(0, max_monsters_per_room)
+    number_of_items = randint(0, max_items_per_room)
 
     for i in range(number_of_monsters):
         x = randint(room.x1 + 1, room.x2 - 1)
@@ -64,9 +67,19 @@ def place_entities(room, entities, max_monsters_per_room, colors):
                 monster = Entity(x, y, 'T', colors.get('darker_green'), 'Troll',
                  blocks=True, render_order=RenderOrder.ACTOR, fighter=fighter_component, ai=ai_component)
             entities.append(monster)
+    
+    for i in range(number_of_items):
+        x = randint(room.x1 + 1, room.x2 - 1)
+        y = randint(room.y1 + 1, room.y2 - 1)
+
+        if not any([entity for entity in entities if entity.x == x and entity.y == y]):
+            item_component = Item(use_function=heal, amount=4)
+            item = Entity(x, y, '!', colors.get('violet'), 'Healing Potion', render_order=RenderOrder.ITEM, item=item_component)
+
+            entities.append(item)
 
 def make_map(game_map, max_rooms, room_min_size, room_max_size, map_width,
- map_height, player, entities, max_monsters_per_room, colors):
+ map_height, player, entities, max_monsters_per_room, max_items_per_room, colors):
     # let's create two rooms for demo purposes:
     rooms = []
     num_rooms = 0
@@ -104,7 +117,7 @@ def make_map(game_map, max_rooms, room_min_size, room_max_size, map_width,
                     create_v_tunnel(game_map, prev_y, new_y, prev_x)
                     create_h_tunnel(game_map, prev_x, new_x, new_y)
             
-            place_entities(new_room, entities, max_monsters_per_room, colors)
+            place_entities(new_room, entities, max_monsters_per_room, max_items_per_room, colors)
 
             rooms.append(new_room)
             num_rooms += 1
