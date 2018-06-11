@@ -3,16 +3,26 @@
 from game_states import GameStates
 
 def handle_keys(user_input, game_state):
-    if game_state == GameStates.PLAYERS_TURN:
-        return handle_player_keys(user_input)
-    elif game_state == GameStates.PLAYER_DEAD:
-        return handle_player_dead_keys(user_input)
-    elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
-        return handle_inventory_keys(user_input)
+    if user_input:
+        if game_state == GameStates.PLAYERS_TURN:
+            return handle_player_keys(user_input)
+        elif game_state == GameStates.PLAYER_DEAD:
+            return handle_player_dead_keys(user_input)
+        elif game_state == GameStates.TARGETING:
+            return handle_targeting_keys(user_input)
+        elif game_state in (GameStates.SHOW_INVENTORY, GameStates.DROP_INVENTORY):
+            return handle_inventory_keys(user_input)
+        elif game_state == GameStates.LEVEL_UP:
+            return handle_level_up_menu(user_input)
+        elif game_state == GameStates.CHAR_SCREEN:
+            return handle_char_screen(user_input)
     return {}
 
 def handle_player_keys(user_input):
     # Movement keys
+    if not user_input:
+        return {}
+
     key_char = user_input.char
 
     if user_input.key == 'UP' or key_char == 'k':
@@ -37,6 +47,12 @@ def handle_player_keys(user_input):
         return {'show_inventory': True}
     elif key_char == 'd':
         return {'drop_inventory': True}
+    elif key_char == '.' and user_input.shift:
+        return {'take_stairs': True}
+    elif key_char == 'c':
+        return {'show_character_screen': True}
+    elif key_char == 'z':
+        return {'wait': True}
 
     if user_input.key == 'ENTER' and user_input.alt == True:
         # Alt + Enter: toggle full screen
@@ -48,7 +64,14 @@ def handle_player_keys(user_input):
     # No key pressed
     return {}
 
+def handle_targeting_keys(user_input):
+    if user_input.key == 'ESCAPE':
+        return {'exit': True}
+    return {}
+
 def handle_player_dead_keys(user_input):
+    if not user_input:
+        return {}
     key_char = user_input.char
     if key_char == 'i':
         return {'show_inventory': True}
@@ -64,7 +87,7 @@ def handle_player_dead_keys(user_input):
     return {}
 
 def handle_inventory_keys(user_input):
-    if not user_input.char:
+    if not user_input.char or not user_input:
         return {}
 
     index = ord(user_input.char) - ord('a')
@@ -80,4 +103,44 @@ def handle_inventory_keys(user_input):
         return {'exit': True}
 
     # No key pressed
+    return {}
+
+def handle_main_menu(user_input):
+    if user_input:
+        key_char = user_input.char
+
+        if key_char == 'a':
+            return {'new_game': True}
+        elif key_char == 'b':
+            return {'load_game': True}
+        elif key_char == 'c' or user_input.key == 'ESCAPE':
+            return {'exit': True}
+    return {}
+
+def handle_level_up_menu(user_input):
+    if user_input:
+        key_char = user_input.char
+
+        if key_char == 'a':
+            return {'level_up': 'hp'}
+        if key_char == 'b':
+            return {'level_up': 'str'}
+        if key_char == 'c':
+            return {'level_up': 'def'}
+    return {}
+
+def handle_char_screen(user_input):
+    if user_input.key == 'ESCAPE':
+        return {'exit': True}
+    return {}
+
+def handle_mouse(mouse_event):
+    if mouse_event:
+        (x, y) = mouse_event.cell
+
+        if mouse_event.button == 'LEFT':
+            return {'left_click': (x, y)}
+        elif mouse_event.button == 'RIGHT':
+            return {'right_click': (x, y)}
+
     return {}
